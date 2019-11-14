@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("./service-worker.js")
+          .then(registration => registration.update());
+      }
+
+      const handle = res => {
+        if (res.ok) {
+          return res.blob();
+        } else {
+          throw new Error("request failed");
+        }
+      };
+
+      const draw = label => {
+        return blob => {
+          const url = URL.createObjectURL(blob);
+          const figure = document.createElement("figure");
+          const img = document.createElement("img");
+          const figcaption = document.createElement("figcaption");
+          img.setAttribute("src", url);
+          figcaption.innerText = label;
+          figure.append(img);
+          figure.append(figcaption);
+          document.body.append(figure);
+        };
+      };
+
+      fetch("https://geolonia.github.io/blue-marble/tiles/2/2/1.png")
+        .then(handle)
+        .then(draw("not proxied: 2/2/1.png"));
+
+      fetch("https://geolonia.github.io/blue-marble/tiles/2/2/1.png", {
+        headers: {
+          "x-service-worker-wms-to-xyz-proxy-template":
+            "https://geolonia.github.io/blue-marble/tiles/{z}/{x}/{y}.png"
+        }
+      })
+        .then(handle)
+        .then(draw("proxied: 2/2/1.png -> 2/2/2.png"));
+    </script>
+  </body>
+</html>
